@@ -2,7 +2,7 @@
 
 An AI-powered mock interview app that generates tailored questions, scores your answers in real time, and provides coaching with model answers.
 
-Built with React + Vite, deployed via Vercel, powered by Claude (Anthropic).
+Built with React + Vite, deployed via Vercel, powered by Groq (LLaMA 3.3 70B).
 
 ---
 
@@ -31,10 +31,10 @@ interview-trainer/
    npm install
    ```
 
-2. Copy the env file and add your Anthropic API key:
+2. Copy the env file and add your Groq API key:
    ```bash
    cp .env.example .env
-   # Edit .env and paste your key from https://console.anthropic.com
+   # Edit .env and paste your key from https://console.groq.com
    ```
 
 3. Install Vercel CLI to run the serverless function locally:
@@ -51,11 +51,21 @@ interview-trainer/
 1. Push your code to GitHub.
 2. Go to https://vercel.com → **New Project** → Import your GitHub repo.
 3. Add environment variable:
-   - Key: `ANTHROPIC_API_KEY`
-   - Value: your key from https://console.anthropic.com
+   - Key: `GROQ_API_KEY`
+   - Value: your key from https://console.groq.com
 4. Click **Deploy**.
 
 Your app will be live at `https://your-project.vercel.app`.
+
+---
+
+## Getting a Groq API key (free)
+
+1. Go to https://console.groq.com and sign up — it's free.
+2. Click **API Keys** in the sidebar → **Create API Key**.
+3. Copy the key (starts with `gsk_`) and paste it into your `.env` file or Vercel environment variables.
+
+Groq provides free access to LLaMA 3.3 70B with generous rate limits and very fast inference.
 
 ---
 
@@ -65,3 +75,18 @@ Your app will be live at `https://your-project.vercel.app`.
 - Live timer per question
 - AI scoring (1–10) with strengths, improvements, model answer, pro tip
 - Session summary with score breakdown
+
+---
+
+## How it works
+
+```
+Browser (React)
+    ↓  POST /api/chat
+Vercel Serverless Function (api/chat.js)
+    ↓  Groq API (LLaMA 3.3 70B)
+    ↑  JSON response
+Browser renders feedback
+```
+
+The API key never touches the browser — it lives only in the Vercel serverless function as an environment variable.
