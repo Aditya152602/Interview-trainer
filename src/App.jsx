@@ -21,14 +21,14 @@ const slbl  = s => s>=8?"Excellent 🌟":s>=6?"Good 👍":s>=4?"Fair 📖":"Need
 const fmt   = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
 
 // ── API call goes through /api/chat (Vercel serverless function)
-// ── so your ANTHROPIC_API_KEY stays secret on the server side
+// ── so your GROQ_API_KEY stays secret on the server side
 async function callClaude(sys, usr) {
   const r = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1000,
+      max_tokens: 4000,
       system: sys,
       messages: [{ role: "user", content: usr }],
     }),
@@ -82,8 +82,9 @@ export default function InterviewTrainer() {
     try {
       const txt = await callClaude(
         "Expert HR interview coach. Return ONLY valid JSON, no markdown.",
-        `Generate 8 interview questions for: ${prof.role} | ${prof.exp}${prof.industry?" | "+prof.industry:""}.
-Mix: 3 Technical, 2 Behavioral (STAR), 2 Situational, 1 HR.
+        `Generate 30 interview questions for: ${prof.role} | ${prof.exp}${prof.industry?" | "+prof.industry:""}.
+Mix: 12 Technical, 8 Behavioral (STAR), 6 Situational, 4 HR.
+Vary difficulty: roughly 10 Easy, 12 Medium, 8 Hard across the set.
 JSON only: {"questions":[{"id":1,"question":"...","category":"Technical","difficulty":"Easy","hint":"..."}]}`
       );
       const { questions } = toJSON(txt);
