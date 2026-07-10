@@ -3,54 +3,80 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.TOGETHER_API_KEY) {
-    console.error('❌ TOGETHER_API_KEY is not set');
-    return res.status(500).json({ error: 'TOGETHER_API_KEY is not configured.' });
+  if (!process.env.HF_API_KEY) {
+    console.error('❌ HF_API_KEY is not set');
+    return res.status(500).json({ error: 'HF_API_KEY is not configured.' });
   }
 
   try {
-    const { system, messages, max_tokens } = req.body;
+    const { system, messages } = req.body;
+    const userMessage = messages[messages.length - 1].content;
 
-    // Build messages in OpenAI-compatible format
-    const chatMessages = [];
-    if (system) chatMessages.push({ role: 'system', content: system });
-    chatMessages.push(...messages);
+    // IBM Granite 3.0 chat template format
+    const prompt =
+      `<|start_of_role|>system<|end_of_role|>${system || "You are a helpful assistant."}<|end_of_text|>\n` +
+      `<|start_of_role|>user<|end_of_role|>${userMessage}<|end_of_text|>\n` +
+      `<|start_of_role|>assistant<|end_of_role|>`;
 
-    console.log('📤 Calling IBM Granite via Together AI...');
+    console.log('📤 Calling IBM Granite 3.0 via HuggingFace...');
 
-    // Together AI hosts official IBM Granite models
-    // This genuinely uses IBM Granite — satisfies the IBM requirement
-    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.TOGETHER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'ibm/granite-3-8b-instruct',   // Official IBM Granite model
-        max_tokens: max_tokens || 4000,
-        temperature: 0.7,
-        messages: chatMessages,
-      }),
-    });
+    // Using basic text-generation endpoint (not /v1/chat/completions)
+    // granite-3.0-8b-instruct is available on HuggingFace free serverless inference
+    const response = await fetch(
+      'https://api-inference.huggingface.co/models/ibm-granite/granite-3.0-8b-instruct',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.HF_API_KEY}`,
+          'Content-Type': 'application/json',
+          'x-wait-for-model': 'true',   // wait for cold start instead of failing
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 3000,
+            return_full_text: false,
+            temperature: 0.7,
+            do_sample: true,
+          },
+        }),
+      }
+    );
 
-    const data = await response.json();
+    const rawText = await response.text();
+    console.log('📥 HF Status:', response.status);
+    console.log('📥 HF Preview:', rawText.substring(0, 400));
 
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      console.error('❌ JSON parse failed:', rawText.substring(0, 200));
+      return res.status(500).json({ error: `Parse error: ${rawText.substring(0, 200)}` });
+    }
+
+    // Handle HF errors
     if (data.error) {
-      console.error('❌ Together AI error:', data.error);
-      return res.status(400).json({ error: data.error.message || data.error });
+      const errMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+      console.error('❌ HF error:', errMsg);
+      return res.status(400).json({ error: errMsg });
     }
 
-    if (!response.ok) {
-      console.error('❌ Together AI HTTP error:', response.status, data);
-      return res.status(response.status).json({ error: `API error: ${response.status}` });
+    // Extract generated text
+    const generatedText = Array.isArray(data)
+      ? data[0]?.generated_text
+      : data?.generated_text;
+
+    if (!generatedText) {
+      console.error('❌ No text in response:', JSON.stringify(data).substring(0, 200));
+      return res.status(500).json({ error: 'No text returned from IBM Granite.' });
     }
 
-    console.log('✅ IBM Granite (Together AI) responded successfully');
+    console.log('✅ IBM Granite 3.0 responded successfully');
 
-    // Return in Anthropic-style format — frontend needs zero changes
+    // Return in same format frontend expects — no frontend changes needed
     return res.status(200).json({
-      content: [{ type: 'text', text: data.choices[0].message.content }],
+      content: [{ type: 'text', text: generatedText }],
     });
 
   } catch (error) {
