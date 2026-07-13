@@ -1,82 +1,110 @@
+/**
+ * API Route: /api/chat
+ * Model: IBM Granite 3.0 8B via IBM watsonx.ai
+ *
+ * Flow:
+ *  1. Exchange IBM API key → IAM access token
+ *  2. Call watsonx.ai with IBM Granite model
+ *  3. Return response to frontend
+ *
+ * Required Vercel env variables:
+ *   IBM_API_KEY      → your IBM Cloud API key
+ *   IBM_PROJECT_ID   → your watsonx.ai project ID
+ */
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!process.env.HF_API_KEY) {
-    console.error('❌ HF_API_KEY is not set');
-    return res.status(500).json({ error: 'HF_API_KEY is not configured.' });
+  if (!process.env.IBM_API_KEY || !process.env.IBM_PROJECT_ID) {
+    console.error('❌ IBM_API_KEY or IBM_PROJECT_ID not set in environment variables');
+    return res.status(500).json({ error: 'IBM credentials are not configured.' });
   }
 
   try {
-    const { system, messages } = req.body;
-    const userMessage = messages[messages.length - 1].content;
+    const { system, messages, max_tokens } = req.body;
 
-    // IBM Granite 3.0 chat template format
-    const prompt =
-      `<|start_of_role|>system<|end_of_role|>${system || "You are a helpful assistant."}<|end_of_text|>\n` +
-      `<|start_of_role|>user<|end_of_role|>${userMessage}<|end_of_text|>\n` +
-      `<|start_of_role|>assistant<|end_of_role|>`;
+    // ── STEP 1: Exchange IBM API key for IAM access token ──────────────────
+    console.log('🔑 Getting IBM IAM access token...');
 
-    console.log('📤 Calling IBM Granite 3.0 via HuggingFace...');
+    const iamRes = await fetch('https://iam.cloud.ibm.com/identity/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: `grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${process.env.IBM_API_KEY}`,
+    });
 
-    // Using basic text-generation endpoint (not /v1/chat/completions)
-    // granite-3.0-8b-instruct is available on HuggingFace free serverless inference
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/ibm-granite/granite-3.0-8b-instruct',
+    const iamData = await iamRes.json();
+
+    if (!iamData.access_token) {
+      console.error('❌ IAM token error:', JSON.stringify(iamData).substring(0, 300));
+      return res.status(401).json({ error: 'Failed to authenticate with IBM Cloud. Check your IBM_API_KEY.' });
+    }
+
+    console.log('✅ IAM token obtained');
+
+    // ── STEP 2: Build messages for IBM Granite ─────────────────────────────
+    const chatMessages = [];
+    if (system) chatMessages.push({ role: 'system', content: system });
+    chatMessages.push(...messages);
+
+    // ── STEP 3: Call IBM Granite via watsonx.ai ────────────────────────────
+    console.log('📤 Calling IBM Granite 3.0 via watsonx.ai...');
+
+    const watsonRes = await fetch(
+      'https://us-south.ml.cloud.ibm.com/ml/v1/text/chat?version=2023-05-29',
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.HF_API_KEY}`,
+          'Authorization': `Bearer ${iamData.access_token}`,
           'Content-Type': 'application/json',
-          'x-wait-for-model': 'true',   // wait for cold start instead of failing
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 3000,
-            return_full_text: false,
-            temperature: 0.7,
-            do_sample: true,
-          },
+          model_id: 'ibm/granite-3-8b-instruct',
+          project_id: process.env.IBM_PROJECT_ID,
+          messages: chatMessages,
+          max_tokens: max_tokens || 4000,
+          temperature: 0.7,
         }),
       }
     );
 
-    const rawText = await response.text();
-    console.log('📥 HF Status:', response.status);
-    console.log('📥 HF Preview:', rawText.substring(0, 400));
+    const rawText = await watsonRes.text();
+    console.log('📥 watsonx status:', watsonRes.status);
+    console.log('📥 watsonx preview:', rawText.substring(0, 400));
 
-    let data;
+    let watsonData;
     try {
-      data = JSON.parse(rawText);
+      watsonData = JSON.parse(rawText);
     } catch {
-      console.error('❌ JSON parse failed:', rawText.substring(0, 200));
-      return res.status(500).json({ error: `Parse error: ${rawText.substring(0, 200)}` });
+      console.error('❌ JSON parse error:', rawText.substring(0, 300));
+      return res.status(500).json({ error: 'Invalid response from watsonx.ai' });
     }
 
-    // Handle HF errors
-    if (data.error) {
-      const errMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
-      console.error('❌ HF error:', errMsg);
-      return res.status(400).json({ error: errMsg });
+    if (!watsonRes.ok || watsonData.error) {
+      const errMsg = watsonData.error?.message || watsonData.message || JSON.stringify(watsonData).substring(0, 300);
+      console.error('❌ watsonx.ai error:', errMsg);
+      return res.status(watsonRes.status || 400).json({ error: errMsg });
     }
 
-    // Extract generated text
-    const generatedText = Array.isArray(data)
-      ? data[0]?.generated_text
-      : data?.generated_text;
+    // Extract text from response
+    const text = watsonData.choices?.[0]?.message?.content
+               || watsonData.results?.[0]?.generated_text;
 
-    if (!generatedText) {
-      console.error('❌ No text in response:', JSON.stringify(data).substring(0, 200));
-      return res.status(500).json({ error: 'No text returned from IBM Granite.' });
+    if (!text) {
+      console.error('❌ No text in watsonx response:', JSON.stringify(watsonData).substring(0, 300));
+      return res.status(500).json({ error: 'No response text from IBM Granite.' });
     }
 
-    console.log('✅ IBM Granite 3.0 responded successfully');
+    console.log('✅ IBM Granite responded successfully');
 
     // Return in same format frontend expects — no frontend changes needed
     return res.status(200).json({
-      content: [{ type: 'text', text: generatedText }],
+      content: [{ type: 'text', text }],
     });
 
   } catch (error) {
