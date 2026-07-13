@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&pause=1000&color=3B82F6&center=true&vCenter=true&width=600&lines=🎯+Interview+Trainer+Agent;AI-Powered+Mock+Interviews;Real-Time+Coaching+%26+Scoring" alt="Typing SVG" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0f2744,2563eb&height=220&section=header&text=Interview%20Trainer%20Agent&fontSize=42&fontColor=ffffff&animation=twinkling&fontAlignY=38&desc=AI-Powered%20Mock%20Interviews%20%7C%20Real-Time%20Scoring%20%7C%20Expert%20Coaching&descAlignY=58&descSize=16&descColor=93c5fd" width="100%"/>
 
 <br/>
 
 ![Version](https://img.shields.io/badge/version-2.0.0-3b82f6?style=for-the-badge&logo=semantic-release)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)
-![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=for-the-badge&logo=vite)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-5.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Groq](https://img.shields.io/badge/Groq-LLaMA_3.3_70B-FF6B35?style=for-the-badge)
 ![Vercel](https://img.shields.io/badge/Deployed_on-Vercel-000000?style=for-the-badge&logo=vercel)
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)
@@ -18,7 +18,10 @@
 
 <br/>
 
-[🚀 Live Demo](https://interview-trainer-kohl.vercel.app) &nbsp;·&nbsp; [📖 Docs](#-how-it-works) &nbsp;·&nbsp; [🐛 Report Bug](https://github.com/Aditya152602/Interview-trainer/issues) &nbsp;·&nbsp; [✨ Request Feature](https://github.com/Aditya152602/Interview-trainer/issues)
+[🚀 Live Demo](https://interview-trainer-kohl.vercel.app) &nbsp;·&nbsp;
+[📖 Docs](#-how-it-works) &nbsp;·&nbsp;
+[🐛 Report Bug](https://github.com/Aditya152602/Interview-trainer/issues) &nbsp;·&nbsp;
+[✨ Request Feature](https://github.com/Aditya152602/Interview-trainer/issues)
 
 </div>
 
@@ -83,7 +86,7 @@ You answer → AI scores → You improve → You get hired
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ How It Works
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -150,7 +153,7 @@ npm install
 
 # 3. Set up environment
 cp .env.example .env
-# Add your Groq key to .env → GROQ_API_KEY=gsk_...
+# Add your Groq key → GROQ_API_KEY=gsk_...
 
 # 4. Install Vercel CLI
 npm install -g vercel
@@ -168,7 +171,7 @@ git add .
 git commit -m "Deploy interview trainer"
 git push origin main
 
-# Then on Vercel:
+# On Vercel:
 # 1. Import GitHub repo
 # 2. Add env var: GROQ_API_KEY = gsk_...
 # 3. Deploy → live in 30 seconds
@@ -182,7 +185,7 @@ git push origin main
 |----------|-------------|--------------|
 | `GROQ_API_KEY` | Groq API authentication key | [console.groq.com](https://console.groq.com) → API Keys |
 
-> **Security note:** This key never reaches the browser. It lives exclusively inside Vercel's serverless runtime, making it impossible for end users to extract or misuse it.
+> **Security note:** This key never reaches the browser. It lives exclusively inside Vercel's serverless runtime.
 
 ---
 
@@ -223,16 +226,12 @@ git push origin main
 
 ## 🤝 Contributing
 
-Contributions are what make open source incredible.
-
 ```bash
 # Fork → Clone → Branch → Build → PR
 git checkout -b feature/your-amazing-feature
 git commit -m "Add: your amazing feature"
 git push origin feature/your-amazing-feature
 ```
-
-Open a Pull Request and let's build something great together.
 
 ---
 
@@ -244,14 +243,18 @@ Distributed under the MIT License.
 
 <div align="center">
 
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0f2744,2563eb&height=120&section=footer" width="100%"/>
+
 **Built with 💙 by [Aditya Dwivedi](https://github.com/Aditya152602)**
 
 *If this project helped you land an interview — drop a ⭐ on the repo.*
 
 <br/>
 
-![Star History](https://img.shields.io/github/stars/Aditya152602/Interview-trainer?style=social)
-&nbsp;
+![Stars](https://img.shields.io/github/stars/Aditya152602/Interview-trainer?style=social)
+&nbsp;&nbsp;
 ![Forks](https://img.shields.io/github/forks/Aditya152602/Interview-trainer?style=social)
+&nbsp;&nbsp;
+![Watchers](https://img.shields.io/github/watchers/Aditya152602/Interview-trainer?style=social)
 
 </div>
