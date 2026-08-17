@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         max_tokens: max_tokens || 4000,
         messages: chatMessages,
       }),
