@@ -123,7 +123,7 @@ JSON: {"score":7,"feedback":"...","strengths":["...","..."],"improvements":["...
     <div style={{ minHeight:"100vh", background:"#f0f4f8", fontFamily:"system-ui,-apple-system,sans-serif" }}>
 
       {/* NAV */}
-      <div style={{ background:"#0f2744", padding:"13px 24px", display:"flex", justifyContent:"space-between", alignItems:"center", position:"sticky", top:0, zIndex:20 }}>
+      
         <div style={{ display:"flex", alignItems:"center", gap:9 }}>
           <span style={{ fontSize:20 }}>🎯</span>
           <span style={{ color:"#fff", fontWeight:800, fontSize:15 }}>Interview Trainer Agent</span>
